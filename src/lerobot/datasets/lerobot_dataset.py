@@ -99,6 +99,7 @@ class LeRobotDatasetMetadata:
         self.latest_episode = None
         self.metadata_buffer: list[dict] = []
         self.metadata_buffer_size = metadata_buffer_size
+        self._task_name_by_index: dict[int, str] = {}
 
         try:
             if force_cache_sync:
@@ -167,6 +168,31 @@ class LeRobotDatasetMetadata:
         self.subtasks = load_subtasks(self.root)
         self.episodes = load_episodes(self.root)
         self.stats = load_stats(self.root)
+        self._task_name_by_index = {
+            int(task_index): str(task_name)
+            for task_name, task_index in zip(
+                self.tasks.index.tolist(),
+                self.tasks["task_index"].tolist(),
+                strict=False,
+            )
+        }
+
+    def get_task_name(self, task_index: int) -> str:
+        if task_index in self._task_name_by_index:
+            return self._task_name_by_index[task_index]
+
+        if 0 <= task_index < len(self.tasks):
+            return str(self.tasks.iloc[task_index].name)
+
+        available_indices = sorted(self._task_name_by_index.keys())
+        if available_indices:
+            bounds = f"[{available_indices[0]}, {available_indices[-1]}]"
+        else:
+            bounds = "[]"
+        raise IndexError(
+            f"Task index {task_index} is out of bounds for dataset '{self.repo_id}' "
+            f"(revision='{self.revision}'). Available task_index values are in {bounds}."
+        )
 
     def pull_from_repo(
         self,
@@ -1107,14 +1133,13 @@ class LeRobotDataset(torch.utils.data.Dataset):
                 item[cam] = self.image_transforms(item[cam])
 
         # Add task as a string
-        task_idx = item["task_index"].item()
-        item["task"] = self.meta.tasks.iloc[task_idx].name
+        task_idx = int(item["task_index"].item())
+        item["task"] = self.meta.get_task_name(task_idx)
 
         # add subtask information if available
         if "subtask_index" in self.features and self.meta.subtasks is not None:
             subtask_idx = item["subtask_index"].item()
             item["subtask"] = self.meta.subtasks.iloc[subtask_idx].name
-
         return item
 
     def __repr__(self):

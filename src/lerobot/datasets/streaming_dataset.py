@@ -353,7 +353,7 @@ class StreamingLeRobotDataset(torch.utils.data.IterableDataset):
         for update in updates:
             result.update(update)
 
-        result["task"] = self.meta.tasks.iloc[item["task_index"]].name
+        result["task"] = self.meta.get_task_name(int(item["task_index"]))
 
         yield result
 
