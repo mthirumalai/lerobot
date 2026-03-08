@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+LEROBOT=/Users/mthirumalai/miniforge3/envs/lerobot/bin
+
+# Resolve policy path
+if [[ -n "$1" ]]; then
+    policy="$1"
+else
+    echo "Select a policy:"
+    echo "  s  -> so101.pnp.1.policy.s1"
+    echo "  a  -> so101.pnp.1.policy.a1"
+    echo "  (enter) -> type your own"
+    read -r choice
+    case "$choice" in
+        s) policy="so101.pnp.1.policy.s1" ;;
+        a) policy="so101.pnp.1.policy.a1" ;;
+        *)
+            echo "Enter policy name (will be prefixed with mthirumalai/):"
+            read -r policy
+            ;;
+    esac
+fi
+
+policy_path="mthirumalai/${policy}"
+echo "Using policy: ${policy_path}"
+
+rm -rf /Users/mthirumalai/.cache/huggingface/lerobot/mthirumalai/eval_so101_test
+
+"$LEROBOT/lerobot-record" \
+  --robot.type=so101_follower \
+  --robot.calibration_dir=/Users/mthirumalai/.cache/huggingface/lerobot/calibration/robots/so_follower \
+  --robot.port=/dev/tty.usbmodem5AE60840061 \
+  --robot.id=bombay_girl_follower_arm \
+  --robot.cameras="{ camera1: {type: opencv, index_or_path: 1, width: 640, height: 480, fps: 30}, camera2: {type: opencv, index_or_path: 0, width: 640, height: 480, fps: 30}  }" \
+  --policy.path="${policy_path}" \
+  --dataset.repo_id=mthirumalai/eval_so101_test \
+  --dataset.single_task="pick up the lego block and place it in the stainless steel cup" \
+  --display_data=false \
+  --dataset.episode_time_s=300
+
+#"$LEROBOT/lerobot-record" \
+#	--robot.type=so101_follower \
+#	--robot.port=/dev/tty.usbmodem5AE60840061 \
+#	--robot.id=bombay_girl_follower_arm \
+#	--teleop.type=so101_leader \
+#	--teleop.port=/dev/tty.usbmodem5AE60837631 \
+#	--teleop.id=bombay_girl_leader_arm \
+#	--display_data=true \
+#	--dataset.repo_id=mthirumalai/so101.pnp.1 \
+#	--dataset.num_episodes=50  \
+#	--dataset.episode_time_s 60 \
+#	--dataset.reset_time_s 2 \
+#	--resume true

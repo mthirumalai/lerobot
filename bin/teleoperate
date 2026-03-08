@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+LEROBOT=/Users/mthirumalai/miniforge3/envs/lerobot/bin
+
+"$LEROBOT/lerobot-teleoperate" \
+    --robot.type=so101_follower \
+    --robot.port=/dev/tty.usbmodem5AE60840061 \
+    --robot.id=bombay_girl_follower_arm \
+    --robot.cameras="{ camera1: {type: opencv, index_or_path: 1, width: 640, height: 480, fps: 30}, camera2: {type: opencv, index_or_path: 0, width: 640, height: 480, fps: 30}  }" \
+    --teleop.type=so101_leader \
+    --teleop.port=/dev/tty.usbmodem5AE60837631 \
+    --teleop.id=bombay_girl_leader_arm
